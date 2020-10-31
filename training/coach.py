@@ -25,6 +25,7 @@ class Coach:
 
 		self.global_step = 0
 
+		# 在这里设置运行环境是CPU还是GPU
 		self.device = 'cuda:0'  # TODO: Allow multiple GPU? currently using CUDA_VISIBLE_DEVICES
 		self.opts.device = self.device
 
@@ -76,13 +77,20 @@ class Coach:
 			self.opts.save_interval = self.opts.max_steps
 
 	def train(self):
+		# train() Sets the module in training mode.
+		# 在这里将pSp encoder模型设置为可training的状态
 		self.net.train()
 		while self.global_step < self.opts.max_steps:
 			for batch_idx, batch in enumerate(self.train_dataloader):
 				self.optimizer.zero_grad()
+				# x: source image
+				# y: target image
 				x, y = batch
 				x, y = x.to(self.device).float(), y.to(self.device).float()
+				# forward to encoder and StyleGAN's generator
+				# y_hat is the output of x through encoder and generator
 				y_hat, latent = self.net.forward(x, return_latents=True)
+				# Calculating loss
 				loss, loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent)
 				loss.backward()
 				self.optimizer.step()
@@ -171,6 +179,8 @@ class Coach:
 		print('Loading dataset for {}'.format(self.opts.dataset_type))
 		dataset_args = data_configs.DATASETS[self.opts.dataset_type]
 		transforms_dict = dataset_args['transforms'](self.opts).get_transforms()
+		# 初始化数据集，遍历数据集所在文件夹，读取每张图片的路径，同时指定好transform的方法
+		# 注意：数据被分为了source 和 target两类图片
 		train_dataset_celeba = ImagesDataset(source_root=dataset_args['train_source_root'],
 		                                     target_root=dataset_args['train_target_root'],
 		                                     source_transform=transforms_dict['transform_source'],

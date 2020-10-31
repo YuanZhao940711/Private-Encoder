@@ -83,8 +83,8 @@ class pSp(nn.Module):
 					if alpha is not None:
 						codes[:, i] = alpha * inject_latent[:, i] + (1 - alpha) * codes[:, i]
 					else:
-						#codes[:, i] = inject_latent[:, i]
-						codes[:, i] = codes[:, i]  + inject_latent[:, i]
+						codes[:, i] = inject_latent[:, i]
+						#codes[:, i] = codes[:, i]  + inject_latent[:, i]
 				else:
 					codes[:, i] = 0
 

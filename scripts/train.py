@@ -27,6 +27,7 @@ import pprint
 sys.path.append(".")
 sys.path.append("..")
 
+# import a class is not equal to call its __init__ function
 from options.train_options import TrainOptions
 from training.coach import Coach
 
@@ -37,6 +38,9 @@ def main():
 		raise Exception('Oops... {} already exists'.format(opts.exp_dir))
 	os.makedirs(opts.exp_dir)
 
+	# vars()
+	# Without arguments, equivalent to locals(). 
+	# With an argument, equivalent to object.dict
 	opts_dict = vars(opts)
 	pprint.pprint(opts_dict)
 	with open(os.path.join(opts.exp_dir, 'opt.json'), 'w') as f:
