@@ -174,6 +174,7 @@ class Coach:
 		return optimizer
 
 	def configure_datasets(self):
+		# dataset_type: Type of dataset/experiment to run, default='ffhq_encode'
 		if self.opts.dataset_type not in data_configs.DATASETS.keys():
 			Exception('{} is not a valid dataset_type'.format(self.opts.dataset_type))
 		print('Loading dataset for {}'.format(self.opts.dataset_type))

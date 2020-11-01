@@ -6,6 +6,7 @@ dataset_paths = {
 	'celeba_train_segmentation': '',
 	'celeba_test_segmentation': '',
 	'ffhq': '',
+	'ffhq_test': ''
 }
 
 model_paths = {

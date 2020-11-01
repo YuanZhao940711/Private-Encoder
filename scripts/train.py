@@ -34,9 +34,17 @@ from training.coach import Coach
 
 def main():
 	opts = TrainOptions().parse()
+	"""
 	if os.path.exists(opts.exp_dir):
 		raise Exception('Oops... {} already exists'.format(opts.exp_dir))
 	os.makedirs(opts.exp_dir)
+	"""
+	try:
+		os.makedirs(opts.exp_dir)
+		print("Creating folder... {}".format(opts.exp_dir))
+	except:
+		print("Folder {} already exists".format(opts.exp_dir))
+		pass
 
 	# vars()
 	# Without arguments, equivalent to locals(). 
