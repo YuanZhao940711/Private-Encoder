@@ -54,8 +54,9 @@ class IDLoss(nn.Module):
                             'diff_input': float(diff_input),
                             'diff_views': float(diff_views)})
             """这里在进行余弦相似度计算的时候，为什么没有除以相应向量的模长？"""
+            """在pytorch中，.dot就相当于进行了两个vector的余弦值计算"""
             # 计算生成图像和原source图像的target图像的余弦相似度
-            loss += id_budget - diff_target
+            loss += torch.abs(id_budget - diff_target)
             id_diff = float(diff_target) - float(diff_views)
             sim_improvement += id_diff
             count += 1

@@ -18,6 +18,8 @@ from criteria.lpips.lpips import LPIPS
 from models.psp import pSp
 from training.ranger import Ranger
 
+"""SSIM Calculation"""
+import pytorch_ssim
 
 class Coach:
 	def __init__(self, opts):
@@ -253,13 +255,23 @@ class Coach:
 	def parse_and_log_images(self, id_logs, x, y, y_hat, title, subscript=None, display_count=2):
 		im_data = []
 		for i in range(display_count):
-			cur_im_data = {
+      	#x[i],y[i],y_hat[i].shape: torch.Size([3, 256, 256])
+			cur_im_data = { 
 				# 在这里输入self.opts是为了在 common 中，根据 label_nc 来确定输入图像的任务是什么，进而决定采用何种方式输出图像
 				# 我们的任务需要的主要是 tensor to imag 所以采用的是默认为0的 label_nc
 				'input_face': common.log_input_image(x[i], self.opts),
 				'target_face': common.tensor2im(y[i]),
 				'output_face': common.tensor2im(y_hat[i]),
 			}
+			"""SSIM Calculation"""
+			SSIM = {
+				'input_target_ssim': pytorch_ssim.ssim(x[i],y[i]),
+				'input_output_ssim': pytorch_ssim.ssim(x[i],y_hat[i]),
+				'target_output_ssim': pytorch_ssim.ssim(y[i],y_hat[i])
+			}
+			for key in SSIM.keys():
+				cur_im_data[key] = SSIM[key]
+
 			if id_logs is not None:
 				# 把从ID_Loss中计算来的数值，和图像保留在一起
 				# keys: diff_target, diff_input, diff_views
