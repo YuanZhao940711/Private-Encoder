@@ -254,8 +254,8 @@ class Coach:
 		im_data = []
 		for i in range(display_count):
 			cur_im_data = {
-				# 在这里输入self.opts是为了在common中，根据label_nc来确定输入图像的任务是什么，进而决定采用何种方式输出图像
-				# 我们的任务需要的主要是tensor to imag所以采用的是默认为0的label_nc
+				# 在这里输入self.opts是为了在 common 中，根据 label_nc 来确定输入图像的任务是什么，进而决定采用何种方式输出图像
+				# 我们的任务需要的主要是 tensor to imag 所以采用的是默认为0的 label_nc
 				'input_face': common.log_input_image(x[i], self.opts),
 				'target_face': common.tensor2im(y[i]),
 				'output_face': common.tensor2im(y_hat[i]),
