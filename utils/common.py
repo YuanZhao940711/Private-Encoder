@@ -66,11 +66,11 @@ def vis_faces(log_hooks):
 
 def vis_faces_with_id(hooks_dict, fig, gs, i):
 	plt.imshow(hooks_dict['input_face'])
-	plt.title('Input\nOut Sim={:.2f}'.format(float(hooks_dict['diff_input'])))
+	plt.title('Input\nOut Sim={:.2f}'.format(float(hooks_dict['diff_input']))) # diff_input is the cosine similarity between input image and generated image
 	fig.add_subplot(gs[i, 1])
 	plt.imshow(hooks_dict['target_face'])
-	plt.title('Target\nIn={:.2f}, Out={:.2f}'.format(float(hooks_dict['diff_views']),
-	                                                 float(hooks_dict['diff_target'])))
+	plt.title('Target\nIn={:.2f}, Out={:.2f}'.format(float(hooks_dict['diff_views']), # diff_views is the cosine similarity between input image and target image
+	                                                 float(hooks_dict['diff_target']))) # diff_target is the cosine similarity between generated image and target image
 	fig.add_subplot(gs[i, 2])
 	plt.imshow(hooks_dict['output_face'])
 	plt.title('Output\n Target Sim={:.2f}'.format(float(hooks_dict['diff_target'])))
