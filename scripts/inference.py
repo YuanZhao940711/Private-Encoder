@@ -1,3 +1,15 @@
+"""
+testing:
+python scripts/inference.py \
+--exp_dir=/path/to/experiment \
+--checkpoint_path=experiment/checkpoints/best_model.pt \
+--data_path=/path/to/test_data \
+--test_batch_size=4 \
+--test_workers=4 \
+--couple_outputs
+"""
+
+
 import os
 from argparse import Namespace
 
