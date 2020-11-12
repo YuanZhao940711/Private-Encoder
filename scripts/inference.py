@@ -1,9 +1,9 @@
 """
 testing:
 python scripts/inference.py \
---exp_dir=/path/to/experiment \
---checkpoint_path=experiment/checkpoints/best_model.pt \
---data_path=/path/to/test_data \
+--exp_dir=./image_datasets \
+--checkpoint_path=./experiment/checkpoints/best_model.pt \
+--data_path=./image_datasets/ffhq0k_5k \
 --test_batch_size=4 \
 --test_workers=4 \
 --couple_outputs
@@ -105,7 +105,8 @@ def run():
 				Image.fromarray(res).save(os.path.join(out_path_coupled, os.path.basename(im_path)))
 
 			im_save_path = os.path.join(out_path_results, os.path.basename(im_path))
-			Image.fromarray(np.array(result.resize((256, 256)))).save(im_save_path)
+      ###Resolution change from 256 to 1024###
+			Image.fromarray(np.array(result.resize((1024, 1024)))).save(im_save_path)
 
 			global_i += 1
 

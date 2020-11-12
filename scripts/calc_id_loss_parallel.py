@@ -83,7 +83,7 @@ def run(args):
 	image_paths = sorted(glob.glob(os.path.join(args.data_path, "*.jpg")) + glob.glob(os.path.join(args.data_path, "*.png")))
 	gt_paths = sorted(glob.glob(os.path.join(args.gt_path, "*.jpg")) + glob.glob(os.path.join(args.gt_path, "*.png")))
 	for img, gt in zip(image_paths,gt_paths):
-		file_paths.append([img.replace('.png', 'jpg'), gt.replace('.png', '.jpg')])
+		file_paths.append([img, gt])
 	"""
 	for f in os.listdir(args.data_path):
 		image_path = os.path.join(args.data_path, f)
@@ -91,7 +91,7 @@ def run(args):
 		if f.endswith(".jpg") or f.endswith('.png'):
 			file_paths.append([image_path, gt_path.replace('.png','.jpg')])
 	"""
-	print(file_paths)
+	#print(file_paths)
 	file_chunks = list(chunks(file_paths, int(math.ceil(len(file_paths) / args.num_threads))))
 	pool = mp.Pool(args.num_threads)
 	print('Running on {} paths\nHere we goooo'.format(len(file_paths)))

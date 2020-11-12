@@ -245,7 +245,7 @@ class Coach:
 
 	def log_metrics(self, metrics_dict, prefix):
 		for key, value in metrics_dict.items():
-			self.logger.add_scalar(tag='{}/{}'.format(prefix, key), scalar_value=value, global_step=self.global_step)
+			self.logger.add_scalar('{}/{}'.format(prefix, key), value, self.global_step)
 
 	def print_metrics(self, metrics_dict, prefix):
 		print('Metrics for {}, step {}'.format(prefix, self.global_step))
