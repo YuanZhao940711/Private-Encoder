@@ -91,6 +91,7 @@ class GradualStyleEncoder(Module):
         So we choose bilinear upsample which supports arbitrary output sizes.
         '''
         _, _, H, W = y.size()
+        # 先对小的feature map x上采样和大的y feature map统一size，然后再相加
         return F.interpolate(x, size=(H, W), mode='bilinear', align_corners=True) + y
 
     def forward(self, x):
@@ -98,6 +99,7 @@ class GradualStyleEncoder(Module):
 
         latents = []
         ### Feature maps ###
+        #self.body是金字塔模型，所以越到底层feature map的size越小
         modulelist = list(self.body._modules.values())
         for i, l in enumerate(modulelist):
             x = l(x)
@@ -107,10 +109,13 @@ class GradualStyleEncoder(Module):
                 c2 = x
             elif i == 23:
                 c3 = x
-
+        # 这里的self.styles是map2styles结构，将feature map转化为styles
         for j in range(self.coarse_ind):
             latents.append(self.styles[j](c3))
 
+        # _upsample_add这个模块先将上一层的feature map进行上采样，这是因为上一层feature map的size较小
+        # 然后再按照paper的结构，将上层feature map与新的一层feature map做加运算，得到新的feature map p2
+        # 这里的c1，c2，c3是feature pyramid提取出来的原始feature maps，然后p2和p1则是加上之前feature maps的feature maps
         p2 = self._upsample_add(c3, self.latlayer1(c2))
         for j in range(self.coarse_ind, self.middle_ind):
             latents.append(self.styles[j](p2))

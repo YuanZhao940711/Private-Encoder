@@ -45,7 +45,7 @@ class Coach:
 		if self.opts.id_lambda > 0:
 			# eval() Sets the module in evaluation mode.
 			# This is equivalent with self.train(False).
-			self.id_loss = id_loss.IDLoss().to(self.device).eval()
+			self.id_loss = id_loss.IDLoss(self.opts).to(self.device).eval()
 		# W-norm loss multiplier factor, default=0	
 		if self.opts.w_norm_lambda > 0:
 			self.w_norm_loss = w_norm.WNormLoss(start_from_latent_avg=self.opts.start_from_latent_avg)
@@ -99,7 +99,7 @@ class Coach:
 				self.optimizer.step()
 
 				# Logging related
-				# 随训练过程生成图像，当Step小于1000的时候，每25次进行一次输出，当大于1000的时候，每100次进行输出
+				# 随训练过程生成图像，当Global Steps小于1000的时候，每25个steps进行一次，当Global Steps大于1000的时候，每image_interval进行输出
 				if self.global_step % self.opts.image_interval == 0 or (
 						self.global_step < 1000 and self.global_step % 25 == 0):
 					self.parse_and_log_images(id_logs, x, y, y_hat, title='images/train/faces')
@@ -145,17 +145,22 @@ class Coach:
 				y_hat, latent = self.net.forward(x, return_latents=True)
 				loss, cur_loss_dict, id_logs = self.calc_loss(x, y, y_hat, latent)
 			agg_loss_dict.append(cur_loss_dict)
-
+			"""
 			# Logging related
 			self.parse_and_log_images(id_logs, x, y, y_hat,
 									  title='images/test/faces',
 									  subscript='{:04d}'.format(batch_idx))
-
+			"""
 			# For first step just do sanity test on small amount of data
 			if self.global_step == 0 and batch_idx >= 4:
 				self.net.train()
 				return None  # Do not log, inaccurate in first batch
 
+		self.parse_and_log_images(
+			id_logs, x, y, y_hat,
+			title='images/test/faces',
+			subscript='{:04d}'.format(batch_idx))
+			
 		loss_dict = train_utils.aggregate_loss_dict(agg_loss_dict)
 		self.log_metrics(loss_dict, prefix='test')
 		self.print_metrics(loss_dict, prefix='test')
@@ -252,7 +257,7 @@ class Coach:
 		for key, value in metrics_dict.items():
 			print('\t{} = '.format(key), value)
 
-	def parse_and_log_images(self, id_logs, x, y, y_hat, title, subscript=None, display_count=2):
+	def parse_and_log_images(self, id_logs, x, y, y_hat, title, subscript=None, display_count=1):
 		im_data = []
 		for i in range(display_count):
       	#x[i],y[i],y_hat[i].shape: torch.Size([3, 256, 256])

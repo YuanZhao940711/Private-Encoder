@@ -1,15 +1,3 @@
-"""
-testing:
-python scripts/inference.py \
---exp_dir=./image_datasets \
---checkpoint_path=./experiment/checkpoints/best_model.pt \
---data_path=./image_datasets/ffhq0k_5k \
---test_batch_size=4 \
---test_workers=4 \
---couple_outputs
-"""
-
-
 import os
 from argparse import Namespace
 
@@ -33,13 +21,15 @@ from models.psp import pSp
 
 def run():
 	test_opts = TestOptions().parse()
-
+	
+	privacy_id = test_opts.checkpoint_path.split('/')[-2]
+	folder_name = 'inference_results_'+privacy_id
 	if test_opts.resize_factors is not None:
 		assert len(test_opts.resize_factors.split(',')) == 1, "When running inference, provide a single downsampling factor!"
-		out_path_results = os.path.join(test_opts.exp_dir, 'inference_results',
+		out_path_results = os.path.join(test_opts.exp_dir, folder_name,
 		                                'downsampling_{}'.format(test_opts.resize_factors))
 	else:
-		out_path_results = os.path.join(test_opts.exp_dir, 'inference_results')
+		out_path_results = os.path.join(test_opts.exp_dir, folder_name)
 	os.makedirs(out_path_results, exist_ok=True)
 
 	out_path_coupled = None
@@ -73,7 +63,7 @@ def run():
 	                        batch_size=opts.test_batch_size,
 	                        shuffle=False,
 	                        num_workers=int(opts.test_workers),
-	                        drop_last=True)
+	                        drop_last=False)
 
 	global_i = 0
 	global_time = []
@@ -88,8 +78,8 @@ def run():
 		for i in range(opts.test_batch_size):
 			result = tensor2im(result_batch[i])
 			im_path = dataset.paths[global_i]
-
-			if opts.couple_outputs or global_i % 100 == 0:
+      
+			"""if opts.couple_outputs or global_i % 100 == 0:
 				input_resized = log_input_image(input_batch[i], opts)
 				if opts.resize_factors is not None:
 					# for super resolution, save the original, down-sampled, and output
@@ -103,10 +93,11 @@ def run():
 					                      np.array(result.resize((256, 256)))], axis=1)
 
 				Image.fromarray(res).save(os.path.join(out_path_coupled, os.path.basename(im_path)))
-
+      """
 			im_save_path = os.path.join(out_path_results, os.path.basename(im_path))
       ###Resolution change from 256 to 1024###
-			Image.fromarray(np.array(result.resize((1024, 1024)))).save(im_save_path)
+      # Image.fromarray(np.array(result.resize((1024, 1024)))).save(im_save_path)
+			Image.fromarray(np.array(result)).save(im_save_path)
 
 			global_i += 1
 

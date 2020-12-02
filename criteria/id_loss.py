@@ -5,10 +5,11 @@ from models.encoders.model_irse import Backbone
 
 
 class IDLoss(nn.Module):
-    def __init__(self):
+    def __init__(self, opts):
         super(IDLoss, self).__init__()
         print('Loading ResNet ArcFace')
         # 在这里就是用了 ArcFace 进行计算
+        self.target_id = opts.target_id
         self.facenet = Backbone(input_size=112, num_layers=50, drop_ratio=0.6, mode='ir_se')
         self.facenet.load_state_dict(torch.load(model_paths['ir_se50']))
         # torch.nn.AdaptiveAvgPool2d()
@@ -25,7 +26,7 @@ class IDLoss(nn.Module):
         return x_feats
 
     def forward(self, y_hat, y, x):
-        id_budget = 0.5
+        #id_budget = 0.5
         # x is input source image, y is target image
         # y_hat is the output of x through encoder and generator
         n_samples = x.shape[0]
@@ -55,8 +56,9 @@ class IDLoss(nn.Module):
                             'diff_views': float(diff_views)})
             """这里在进行余弦相似度计算的时候，为什么没有除以相应向量的模长？"""
             """因为之前对目标特征已经进行了归一化处理，所以再计算余弦相似度的时候，就是两个特征向量的內积"""
-            # 计算生成图像和原source图像的target图像的余弦相似度
-            loss += torch.abs(id_budget - diff_target)
+            # 原本计算生成图像和输入图像对应的 target 图像的 cosine similarity
+            # 现在计算生成图像和输入图像关于 Arc-Face Feature 的cosine similarity
+            loss += torch.abs(self.target_id - diff_input)
             id_diff = float(diff_target) - float(diff_views)
             sim_improvement += id_diff
             count += 1

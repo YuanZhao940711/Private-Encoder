@@ -25,7 +25,7 @@ def chunks(lst, n):
 		yield lst[i:i + n]
 
 
-def extract_on_paths(file_paths):
+def extract_on_paths(file_paths, record_path):
 	facenet = IR_101(input_size=112)
 	#facenet = IR_101(input_size=224)
 	facenet.load_state_dict(torch.load(CIRCULAR_FACE_PATH))
@@ -43,30 +43,41 @@ def extract_on_paths(file_paths):
 	count = 0
 
 	scores_dict = {}
-	for res_path, gt_path in file_paths:
+	for idx, (res_path, _) in enumerate(file_paths):
 		count += 1
 		if count % 100 == 0:
 			print('{} done with {}/{}'.format(pid, count, tot_count))
-		if True:
-			input_im = Image.open(res_path)
-			#input_im, _ = mtcnn.align(input_im)
-			input_im = mtcnn.detect(input_im)
-			if input_im is None:
-				print('{} skipping {}'.format(pid, res_path))
+		input_im = Image.open(res_path)
+		#input_im, _ = mtcnn.align(input_im)
+		input_im = mtcnn.detect(input_im)
+		"""
+		if input_im is None:
+			print('{} skipping {}'.format(pid, res_path))
+			continue"""
+		input_id = facenet(id_transform(input_im).unsqueeze(0).cuda())[0]
+		
+		scores = []
+		for i, (_, gt_path) in enumerate(file_paths):
+			if i == idx:
 				continue
-			input_id = facenet(id_transform(input_im).unsqueeze(0).cuda())[0]
-
 			result_im = Image.open(gt_path)
 			#result_im, _ = mtcnn.align(result_im)
 			result_im = mtcnn.detect(result_im)
+			"""
 			if result_im is None:
 				print('{} skipping {}'.format(pid, gt_path))
-				continue
+				continue"""
 			result_id = facenet(id_transform(result_im).unsqueeze(0).cuda())[0]
-
+			
 			score = float(input_id.dot(result_id))
-			scores_dict[os.path.basename(gt_path)] = score
-
+			#print("Individual score is: {}".format(score))
+			scores.append(score)
+		scores.sort()
+		max_scores = scores[-2]
+		#print("maximum different identity's similarity score is: {}".format(max_scores))
+		with open(os.path.join(record_path, 'record.txt'), 'a') as f:
+			f.write("No. {}-maximum different identity similarity score is: {}".format(idx,max_scores))
+		scores_dict[os.path.basename(gt_path)] = max_scores
 	return scores_dict
 
 
@@ -75,10 +86,9 @@ def parse_args():
 	parser.add_argument('--num_threads', type=int, default=4)
 	parser.add_argument('--data_path', type=str,  default='results')
 	parser.add_argument('--gt_path', type=str, default='gt_images')
-	parser.add_argument('--id_threhold', type=float, default=0.0)
+	#parser.add_argument('--record_path', type=str, default='./id_scores_record')
 	args = parser.parse_args()
 	return args
-
 
 import glob
 def run(args):
@@ -90,10 +100,9 @@ def run(args):
 	for img, gt in zip(image_paths,gt_paths):
 		file_paths.append([img, gt])
 
-	out_path = os.path.join(os.path.dirname(args.data_path), 'inference_metrics'+os.path.basename(args.data_path).split('_')[-1])
+	out_path = os.path.join(os.path.dirname(args.data_path), 'inference_metrics')
 	if not os.path.exists(out_path):
-		os.makedirs(out_path)	
-	print("The inference metrics output path is {}".format(out_path))	
+		os.makedirs(out_path)
 	"""
 	for f in os.listdir(args.data_path):
 		image_path = os.path.join(args.data_path, f)
@@ -102,34 +111,25 @@ def run(args):
 			file_paths.append([image_path, gt_path.replace('.png','.jpg')])
 	"""
 	#print(file_paths)
-	file_chunks = list(chunks(file_paths, int(math.ceil(len(file_paths) / args.num_threads))))
-	pool = mp.Pool(args.num_threads)
+	#file_chunks = list(chunks(file_paths, int(math.ceil(len(file_paths) / args.num_threads))))
+	#pool = mp.Pool(args.num_threads)
 	print('Running on {} paths\nHere we goooo'.format(len(file_paths)))
 
 	tic = time.time()
-	results = pool.map(extract_on_paths, file_chunks)
-	scores_dict = {}
-	for d in results:
-		scores_dict.update(d)
+	#results = pool.map(extract_on_paths, file_chunks)
+	scores_dict = extract_on_paths(file_paths, out_path)
 
 	all_scores = list(scores_dict.values())
-	id_threhold = args.id_threhold
-	diff_num = sum(score < id_threhold for score in all_scores)
-	diff_per = diff_num/len(file_paths)
-	mean = np.mean(all_scores)
+	mean = np.max(all_scores)
 	std = np.std(all_scores)
-	result_str = 'New Average score is {:.2f}+-{:.2f}\n Number of different identity is {}\n Different percent is {:.2f}'.format(mean, std, diff_num, diff_per)
+	result_str = 'New Maximum score is {:.2f}+-{:.2f}'.format(mean, std)
 	print(result_str)
-	"""
-	out_path = os.path.join(os.path.dirname(args.data_path), 'inference_metrics'+os.path.basename(args.data_path).split('_')[-1])
-	if not os.path.exists(out_path):
-		os.makedirs(out_path)
-	"""
+
 	with open(os.path.join(out_path, 'stat_id.txt'), 'w') as f:
 		f.write(result_str)
 	with open(os.path.join(out_path, 'scores_id.json'), 'w') as f:
 		json.dump(scores_dict, f)
-
+	
 	toc = time.time()
 	print('Mischief managed in {}s'.format(toc - tic))
 
