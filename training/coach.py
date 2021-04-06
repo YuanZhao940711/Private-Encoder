@@ -18,6 +18,8 @@ from criteria.lpips.lpips import LPIPS
 from models.psp import pSp
 from training.ranger import Ranger
 
+"""SSIM Calculation"""
+import pytorch_ssim
 
 class Coach:
 	def __init__(self, opts):
@@ -97,9 +99,11 @@ class Coach:
 				self.optimizer.step()
 
 				# Logging related
+				# 随训练过程生成图像，当Step小于1000的时候，每25次进行一次输出，当大于1000的时候，每100次进行输出
 				if self.global_step % self.opts.image_interval == 0 or (
 						self.global_step < 1000 and self.global_step % 25 == 0):
 					self.parse_and_log_images(id_logs, x, y, y_hat, title='images/train/faces')
+				# 随训练过程生成log和各种loss指标，每 50 次进行输出
 				if self.global_step % self.opts.board_interval == 0:
 					self.print_metrics(loss_dict, prefix='train')
 					self.log_metrics(loss_dict, prefix='train')
@@ -107,11 +111,17 @@ class Coach:
 				# Validation related
 				val_loss_dict = None
 				if self.global_step % self.opts.val_interval == 0 or self.global_step == self.opts.max_steps:
+					# 在达到指定步数后，进行 validation, 返回 validation 的 loss
 					val_loss_dict = self.validate()
+					# Employing Early Stoping
 					if val_loss_dict and (self.best_val_loss is None or val_loss_dict['loss'] < self.best_val_loss):
 						self.best_val_loss = val_loss_dict['loss']
+						# is_best 代表产生了 best model
+						# 当 val_loss 小于 best val loss 时，则输出 best model
+						# 该过程随着训练持续进行更新，保持随时可以获得 best model
 						self.checkpoint_me(val_loss_dict, is_best=True)
-
+				
+				# Save Checkpoints and trained model
 				if self.global_step % self.opts.save_interval == 0 or self.global_step == self.opts.max_steps:
 					if val_loss_dict is not None:
 						self.checkpoint_me(val_loss_dict, is_best=False)
@@ -182,7 +192,7 @@ class Coach:
 		dataset_args = data_configs.DATASETS[self.opts.dataset_type]
 		transforms_dict = dataset_args['transforms'](self.opts).get_transforms()
 		# 初始化数据集，遍历数据集所在文件夹，读取每张图片的路径，同时指定好transform的方法
-		# 注意：数据被分为了source 和 target两类图片
+		# 注意：数据被分为了source和target两类图片
 		train_dataset_celeba = ImagesDataset(source_root=dataset_args['train_source_root'],
 		                                     target_root=dataset_args['train_target_root'],
 		                                     source_transform=transforms_dict['transform_source'],
@@ -206,6 +216,8 @@ class Coach:
 		if self.opts.id_lambda > 0:
 			loss_id, sim_improvement, id_logs = self.id_loss(y_hat, y, x)
 			loss_dict['loss_id'] = float(loss_id)
+			# 这里的id_improve原本计算了生成图像与目标图像id相似度和目标图像与输入图像id相似度的差值
+			# 似乎没有必要，因为目标图像和输入图像相同
 			loss_dict['id_improve'] = float(sim_improvement)
 			loss = loss_id * self.opts.id_lambda
 		if self.opts.l2_lambda > 0:
@@ -243,19 +255,34 @@ class Coach:
 	def parse_and_log_images(self, id_logs, x, y, y_hat, title, subscript=None, display_count=2):
 		im_data = []
 		for i in range(display_count):
-			cur_im_data = {
+      	#x[i],y[i],y_hat[i].shape: torch.Size([3, 256, 256])
+			cur_im_data = { 
+				# 在这里输入self.opts是为了在 common 中，根据 label_nc 来确定输入图像的任务是什么，进而决定采用何种方式输出图像
+				# 我们的任务需要的主要是 tensor to imag 所以采用的是默认为0的 label_nc
 				'input_face': common.log_input_image(x[i], self.opts),
 				'target_face': common.tensor2im(y[i]),
 				'output_face': common.tensor2im(y_hat[i]),
 			}
+			"""SSIM Calculation"""
+			SSIM = {
+				'input_target_ssim': pytorch_ssim.ssim(x[i],y[i]),
+				'input_output_ssim': pytorch_ssim.ssim(x[i],y_hat[i]),
+				'target_output_ssim': pytorch_ssim.ssim(y[i],y_hat[i])
+			}
+			for key in SSIM.keys():
+				cur_im_data[key] = SSIM[key]
+
 			if id_logs is not None:
+				# 把从ID_Loss中计算来的数值，和图像保留在一起
+				# keys: diff_target, diff_input, diff_views
 				for key in id_logs[i]:
 					cur_im_data[key] = id_logs[i][key]
 			im_data.append(cur_im_data)
+		# 调用log_images将cur_im_data中的数据进行可视化
 		self.log_images(title, im_data=im_data, subscript=subscript)
 
 	def log_images(self, name, im_data, subscript=None, log_latest=False):
-		fig = common.vis_faces(im_data)
+		fig = common.vis_faces(im_data) #对image进行可视化，根据有无id_logs分为有id loss和无id loss两种可视化方式
 		step = self.global_step
 		if log_latest:
 			step = 0

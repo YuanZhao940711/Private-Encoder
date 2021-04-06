@@ -8,6 +8,7 @@ class IDLoss(nn.Module):
     def __init__(self):
         super(IDLoss, self).__init__()
         print('Loading ResNet ArcFace')
+        # 在这里就是用了 ArcFace 进行计算
         self.facenet = Backbone(input_size=112, num_layers=50, drop_ratio=0.6, mode='ir_se')
         self.facenet.load_state_dict(torch.load(model_paths['ir_se50']))
         # torch.nn.AdaptiveAvgPool2d()
@@ -31,6 +32,7 @@ class IDLoss(nn.Module):
         x_feats = self.extract_feats(x)
         y_feats = self.extract_feats(y)  # Otherwise use the feature from there
         y_hat_feats = self.extract_feats(y_hat)
+        # size(bs, 512)
         """
         detach()
         返回一个新的Variable，从当前计算图中分离下来的，但是仍指向原变量的存放位置,不同之处只是requires_grad为false，
@@ -52,8 +54,9 @@ class IDLoss(nn.Module):
                             'diff_input': float(diff_input),
                             'diff_views': float(diff_views)})
             """这里在进行余弦相似度计算的时候，为什么没有除以相应向量的模长？"""
+            """因为之前对目标特征已经进行了归一化处理，所以再计算余弦相似度的时候，就是两个特征向量的內积"""
             # 计算生成图像和原source图像的target图像的余弦相似度
-            loss += id_budget - diff_target
+            loss += torch.abs(id_budget - diff_target)
             id_diff = float(diff_target) - float(diff_views)
             sim_improvement += id_diff
             count += 1
