@@ -46,6 +46,7 @@ class TrainOptions:
 		# arguments for super-resolution
 		self.parser.add_argument('--resize_factors', type=str, default=None,
 		                         help='For super-res, comma-separated resize factors to use for inference.')
+		self.parser.add_argument('--target_id', default=1.0, type=float, help='Target id loss')
 
 	def parse(self):
 		opts = self.parser.parse_args()

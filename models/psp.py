@@ -50,13 +50,15 @@ class pSp(nn.Module):
 			self.__load_latent_avg(ckpt)
 		else:
 			print('Loading encoders weights from irse50!')
-			encoder_ckpt = torch.load(model_paths['ir_se50'])
+			print("[*]Encoders weights from {}".format(model_paths['ir_se50'])) #'./experiment/checkpoints/best_model.pt'
+			encoder_ckpt = torch.load(model_paths['ir_se50']) # model_paths['ir_se50']: 'pretrained_models/model_ir_se50.pth'
 			# if input to encoder is not an RGB image, do not load the input layer weights
 			if self.opts.label_nc != 0:
 				encoder_ckpt = {k: v for k, v in encoder_ckpt.items() if "input_layer" not in k}
 			self.encoder.load_state_dict(encoder_ckpt, strict=False)
 			print('Loading decoder weights from pretrained!')
-			ckpt = torch.load(self.opts.stylegan_weights)
+			print("[*]Decoder weights from {}".format(model_paths['stylegan_ffhq']))
+			ckpt = torch.load(self.opts.stylegan_weights) # stylegan_weights: default=model_paths['stylegan_ffhq']: 'pretrained_models/stylegan2-ffhq-config-f.pt'
 			self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
 			if self.opts.learn_in_w:
 				self.__load_latent_avg(ckpt, repeat=1)
@@ -68,14 +70,14 @@ class pSp(nn.Module):
 		if input_code:
 			codes = x
 		else:
-			codes = self.encoder(x)
+			codes = self.encoder(x) #codes.shape[0] = 18
 			# normalize with respect to the center of an average face
 			if self.opts.start_from_latent_avg:
 				if self.opts.learn_in_w:
 					codes = codes + self.latent_avg.repeat(codes.shape[0], 1)
-				else:
-					codes = codes + self.latent_avg.repeat(codes.shape[0], 1, 1)
-  
+				else: 
+          # 无论是读取StyleGAN还是pSp的pretrain model，都会从pretrained model中读取latent_avg中加到encoder输出的codes
+					codes = codes + self.latent_avg.repeat(codes.shape[0], 1, 1) #把latent_avg扩展到与codes相同的维度
 
 		if latent_mask is not None:
 			for i in latent_mask:
@@ -106,7 +108,7 @@ class pSp(nn.Module):
 		self.opts = opts
 
 	def __load_latent_avg(self, ckpt, repeat=None):
-		if 'latent_avg' in ckpt:
+		if 'latent_avg' in ckpt: # All pretrained models have, latent_avg torch.Size([18, 512])
 			self.latent_avg = ckpt['latent_avg'].to(self.opts.device)
 			if repeat is not None:
 				self.latent_avg = self.latent_avg.repeat(repeat, 1)

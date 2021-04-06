@@ -20,12 +20,20 @@ class MTCNN():
         self.onet.eval()
         self.refrence = get_reference_facial_points(default_square=True)
 
+    def detect(self, img):
+        #_, landmarks = self.detect_faces(img)
+        #if len(landmarks) == 0:
+            #return None
+        img = img.resize((112, 112), Image.ANTIALIAS)
+        return img
+
     def align(self, img):
         _, landmarks = self.detect_faces(img)
         if len(landmarks) == 0:
             return None, None
         facial5points = [[landmarks[0][j], landmarks[0][j + 5]] for j in range(5)]
         warped_face, tfm = warp_and_crop_face(np.array(img), facial5points, self.refrence, crop_size=(112, 112))
+        #warped_face, tfm = warp_and_crop_face(np.array(img), facial5points, self.refrence, crop_size=(256, 256))
         return Image.fromarray(warped_face), tfm
 
     def align_multi(self, img, limit=None, min_face_size=30.0):

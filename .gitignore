@@ -1,0 +1,15 @@
+
+pretrained_models/CurricularFace_Backbone.pth
+pretrained_models/model_ir_se50.pth
+pretrained_models/mtcnn/onet.npy
+pretrained_models/mtcnn/pnet.npy
+pretrained_models/mtcnn/rnet.npy
+pretrained_models/psp_ffhq_encode.pt
+pretrained_models/stylegan2-ffhq-config-f.pt
+pretrained_models/stylegan2-ffhq-config-f.pt
+pretrained_models/psp_ffhq_encode.pt
+pretrained_models/mtcnn/rnet.npy
+pretrained_models/mtcnn/pnet.npy
+pretrained_models/mtcnn/onet.npy
+pretrained_models/CurricularFace_Backbone.pth
+pretrained_models/model_ir_se50.pth

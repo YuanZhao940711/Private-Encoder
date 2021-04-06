@@ -27,6 +27,7 @@ def chunks(lst, n):
 
 def extract_on_paths(file_paths):
 	facenet = IR_101(input_size=112)
+	#facenet = IR_101(input_size=224)
 	facenet.load_state_dict(torch.load(CIRCULAR_FACE_PATH))
 	facenet.cuda()
 	facenet.eval()
@@ -48,20 +49,21 @@ def extract_on_paths(file_paths):
 			print('{} done with {}/{}'.format(pid, count, tot_count))
 		if True:
 			input_im = Image.open(res_path)
-			input_im, _ = mtcnn.align(input_im)
+			#input_im, _ = mtcnn.align(input_im)
+			input_im = mtcnn.detect(input_im)
 			if input_im is None:
 				print('{} skipping {}'.format(pid, res_path))
 				continue
-
 			input_id = facenet(id_transform(input_im).unsqueeze(0).cuda())[0]
 
 			result_im = Image.open(gt_path)
-			result_im, _ = mtcnn.align(result_im)
+			#result_im, _ = mtcnn.align(result_im)
+			result_im = mtcnn.detect(result_im)
 			if result_im is None:
 				print('{} skipping {}'.format(pid, gt_path))
 				continue
-
 			result_id = facenet(id_transform(result_im).unsqueeze(0).cuda())[0]
+
 			score = float(input_id.dot(result_id))
 			scores_dict[os.path.basename(gt_path)] = score
 
@@ -73,18 +75,33 @@ def parse_args():
 	parser.add_argument('--num_threads', type=int, default=4)
 	parser.add_argument('--data_path', type=str,  default='results')
 	parser.add_argument('--gt_path', type=str, default='gt_images')
+	parser.add_argument('--id_threhold', type=float, default=0.0)
 	args = parser.parse_args()
 	return args
 
 
+import glob
 def run(args):
 	file_paths = []
+	
+	image_paths = sorted(glob.glob(os.path.join(args.data_path, "*.jpg")) + glob.glob(os.path.join(args.data_path, "*.png")))
+	gt_paths = sorted(glob.glob(os.path.join(args.gt_path, "*.jpg")) + glob.glob(os.path.join(args.gt_path, "*.png")))
+	#print(image_paths,gt_paths)
+	for img, gt in zip(image_paths,gt_paths):
+		file_paths.append([img, gt])
+
+	out_path = os.path.join(os.path.dirname(args.data_path), 'inference_metrics'+os.path.basename(args.data_path).split('_')[-1])
+	if not os.path.exists(out_path):
+		os.makedirs(out_path)	
+	print("The inference metrics output path is {}".format(out_path))	
+	"""
 	for f in os.listdir(args.data_path):
 		image_path = os.path.join(args.data_path, f)
 		gt_path = os.path.join(args.gt_path, f)
 		if f.endswith(".jpg") or f.endswith('.png'):
 			file_paths.append([image_path, gt_path.replace('.png','.jpg')])
-
+	"""
+	#print(file_paths)
 	file_chunks = list(chunks(file_paths, int(math.ceil(len(file_paths) / args.num_threads))))
 	pool = mp.Pool(args.num_threads)
 	print('Running on {} paths\nHere we goooo'.format(len(file_paths)))
@@ -96,15 +113,18 @@ def run(args):
 		scores_dict.update(d)
 
 	all_scores = list(scores_dict.values())
+	id_threhold = args.id_threhold
+	diff_num = sum(score < id_threhold for score in all_scores)
+	diff_per = diff_num/len(file_paths)
 	mean = np.mean(all_scores)
 	std = np.std(all_scores)
-	result_str = 'New Average score is {:.2f}+-{:.2f}'.format(mean, std)
+	result_str = 'New Average score is {:.2f}+-{:.2f}\nNumber of different identity is {}\nDifferent percent is {:.2f}'.format(mean, std, diff_num, diff_per)
 	print(result_str)
-
-	out_path = os.path.join(os.path.dirname(args.data_path), 'inference_metrics')
+	"""
+	out_path = os.path.join(os.path.dirname(args.data_path), 'inference_metrics'+os.path.basename(args.data_path).split('_')[-1])
 	if not os.path.exists(out_path):
 		os.makedirs(out_path)
-
+	"""
 	with open(os.path.join(out_path, 'stat_id.txt'), 'w') as f:
 		f.write(result_str)
 	with open(os.path.join(out_path, 'scores_id.json'), 'w') as f:
