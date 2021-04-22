@@ -43,23 +43,25 @@ class pSp(nn.Module):
 
 	def load_weights(self):
 		if self.opts.checkpoint_path is not None:
-			print('Loading pSp from checkpoint: {}'.format(self.opts.checkpoint_path))
+			print('Loading pSp weights from: {}'.format(self.opts.checkpoint_path))
 			ckpt = torch.load(self.opts.checkpoint_path, map_location='cpu')
 			self.encoder.load_state_dict(get_keys(ckpt, 'encoder'), strict=True)
 			self.decoder.load_state_dict(get_keys(ckpt, 'decoder'), strict=True)
 			self.__load_latent_avg(ckpt)
 		else:
 			print('Loading encoders weights from irse50!')
-			print("[*]Encoders weights from {}".format(model_paths['ir_se50'])) #'./experiment/checkpoints/best_model.pt'
+			print("[*]irse50 weights located in {}".format(model_paths['ir_se50']))
 			encoder_ckpt = torch.load(model_paths['ir_se50']) # model_paths['ir_se50']: 'pretrained_models/model_ir_se50.pth'
 			# if input to encoder is not an RGB image, do not load the input layer weights
 			if self.opts.label_nc != 0:
 				encoder_ckpt = {k: v for k, v in encoder_ckpt.items() if "input_layer" not in k}
 			self.encoder.load_state_dict(encoder_ckpt, strict=False)
-			print('Loading decoder weights from pretrained!')
-			print("[*]Decoder weights from {}".format(model_paths['stylegan_ffhq']))
-			ckpt = torch.load(self.opts.stylegan_weights) # stylegan_weights: default=model_paths['stylegan_ffhq']: 'pretrained_models/stylegan2-ffhq-config-f.pt'
+
+			print('Loading decoder weights from stylegan!')
+			print("[*]stylegan weights located in {}".format(model_paths['stylegan_ffhq']))
+			ckpt = torch.load(self.opts.stylegan_weights) # model_paths['stylegan_ffhq']: 'pretrained_models/stylegan2-ffhq-config-f.pt'
 			self.decoder.load_state_dict(ckpt['g_ema'], strict=False)
+
 			if self.opts.learn_in_w:
 				self.__load_latent_avg(ckpt, repeat=1)
 			else:

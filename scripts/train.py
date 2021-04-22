@@ -17,9 +17,12 @@ from training.coach import Coach
 def main():
 	opts = TrainOptions().parse()
 
+	exp_dir = os.path.join(opts.exp_dir, opts.dataset_type, 'privacy_{}'.format(opts.target_id))
+	opts.exp_dir = exp_dir
+
 	try:
 		os.makedirs(opts.exp_dir)
-		print("Creating folder... {}".format(opts.exp_dir))
+		print("Output results in folder {}".format(opts.exp_dir))
 	except:
 		print("Folder {} already exists".format(opts.exp_dir))
 		pass

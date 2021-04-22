@@ -1,15 +1,3 @@
-dataset_paths = {
-	#'celeba_train': './image_datasets/celeba0k_20k',
-	#'celeba_test': './image_datasets/celeba20k_21k',
-	'celeba_train': '/content/drive/MyDrive/Image_datasets/celeba_align_0k_20k'
-	'celeba_test': '/content/drive/MyDrive/Image_datasets/celeba_align_20k_21k'
-	'celeba_train_sketch': '',
-	'celeba_test_sketch': '',
-	'celeba_train_segmentation': '',
-	'celeba_test_segmentation': '',
-	'ffhq': './image_datasets/ffhq0k_10k',
-	'ffhq_test': './image_datasets/ffhq10k_11k'
-}
 
 model_paths = {
 	'stylegan_ffhq': 'pretrained_models/stylegan2-ffhq-config-f.pt',

@@ -10,7 +10,13 @@ class TrainOptions:
 
 	def initialize(self):
 		self.parser.add_argument('--exp_dir', type=str, help='Path to experiment output directory')
+
 		self.parser.add_argument('--dataset_type', default='ffhq_encode', type=str, help='Type of dataset/experiment to run')
+		self.parser.add_argument('--train_source_root', default='./image_datasets/train_source_root', type=str, help='directory of train source images')
+		self.parser.add_argument('--train_target_root', default=None, type=str, help='directory of train target images')
+		self.parser.add_argument('--test_source_root', default='./image_datasets/test_source_root', type=str, help='directory of test source images')
+		self.parser.add_argument('--test_target_root', default=None, type=str, help='directory of test target images')
+
 		self.parser.add_argument('--encoder_type', default='GradualStyleEncoder', type=str, help='Which encoder to use')
 		self.parser.add_argument('--input_nc', default=3, type=int, help='Number of input image channels to the psp encoder')
 		self.parser.add_argument('--label_nc', default=0, type=int, help='Number of input label channels to the psp encoder')
@@ -23,8 +29,7 @@ class TrainOptions:
 		self.parser.add_argument('--learning_rate', default=0.0001, type=float, help='Optimizer learning rate')
 		self.parser.add_argument('--optim_name', default='ranger', type=str, help='Which optimizer to use')
 		self.parser.add_argument('--train_decoder', default=False, type=bool, help='Whether to train the decoder model')
-		self.parser.add_argument('--start_from_latent_avg', action='store_true',
-		                         help='Whether to add average latent vector to generate codes from encoder.')
+		self.parser.add_argument('--start_from_latent_avg', action='store_true', help='Whether to add average latent vector to generate codes from encoder.')
 		self.parser.add_argument('--learn_in_w', action='store_true', help='Whether to learn in w space insteaf of w+')
 
 		self.parser.add_argument('--lpips_lambda', default=0.8, type=float, help='LPIPS loss multiplier factor')

@@ -189,26 +189,25 @@ class Coach:
 		return optimizer
 
 	def configure_datasets(self):
-		# dataset_type: Type of dataset/experiment to run, default='ffhq_encode'
 		if self.opts.dataset_type not in data_configs.DATASETS.keys():
 			Exception('{} is not a valid dataset_type'.format(self.opts.dataset_type))
-		print('Loading dataset for {}'.format(self.opts.dataset_type))
-		dataset_args = data_configs.DATASETS[self.opts.dataset_type]
-		transforms_dict = dataset_args['transforms'](self.opts).get_transforms()
-		# 初始化数据集，遍历数据集所在文件夹，读取每张图片的路径，同时指定好transform的方法
-		# 注意：数据被分为了source和target两类图片
-		train_dataset_celeba = ImagesDataset(source_root=dataset_args['train_source_root'],
-		                                     target_root=dataset_args['train_target_root'],
+		print('Loading dataset tansforms for {}'.format(self.opts.dataset_type))
+		transforms_dict = data_configs.DATASETS[self.opts.dataset_type](self.opts).get_transforms()
+
+		train_dataset_celeba = ImagesDataset(source_root=self.opts.train_source_root,
+		                                     target_root=self.opts.train_source_root if self.opts.train_target_root == None else self.opts.train_target_root,
 		                                     source_transform=transforms_dict['transform_source'],
 		                                     target_transform=transforms_dict['transform_gt_train'],
 		                                     opts=self.opts)
-		test_dataset_celeba = ImagesDataset(source_root=dataset_args['test_source_root'],
-		                                    target_root=dataset_args['test_target_root'],
+		test_dataset_celeba = ImagesDataset(source_root=self.opts.test_source_root,
+		                                    target_root=self.opts.test_source_root if self.opts.test_target_root == None else self.opts.test_target_root,
 		                                    source_transform=transforms_dict['transform_source'],
 		                                    target_transform=transforms_dict['transform_test'],
 		                                    opts=self.opts)
+
 		train_dataset = train_dataset_celeba
 		test_dataset = test_dataset_celeba
+		
 		print("Number of training samples: {}".format(len(train_dataset)))
 		print("Number of test samples: {}".format(len(test_dataset)))
 		return train_dataset, test_dataset
