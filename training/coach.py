@@ -28,8 +28,7 @@ class Coach:
 		self.global_step = 0
 
 		# 在这里设置运行环境是CPU还是GPU
-		self.device = 'cuda:0'  # TODO: Allow multiple GPU? currently using CUDA_VISIBLE_DEVICES
-		#self.device = 'cpu'
+		self.device = torch.device('cuda:0' if torch.cuda.is_available else 'cpu')
 		self.opts.device = self.device
 
 		# Initialize network
