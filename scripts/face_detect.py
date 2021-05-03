@@ -2,6 +2,7 @@ import os
 import cv2
 import dlib
 
+from tqdm import tqdm
 from argparse import ArgumentParser
 
 def parser():

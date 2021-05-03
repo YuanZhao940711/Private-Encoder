@@ -24,22 +24,14 @@ def run():
 	
 	privacy_id = test_opts.checkpoint_path.split('/')[-2]
 	folder_name = 'inference_results_'+privacy_id
-	if test_opts.resize_factors is not None:
-		assert len(test_opts.resize_factors.split(',')) == 1, "When running inference, provide a single downsampling factor!"
-		out_path_results = os.path.join(test_opts.exp_dir, folder_name,
-		                                'downsampling_{}'.format(test_opts.resize_factors))
-	else:
-		out_path_results = os.path.join(test_opts.exp_dir, folder_name)
-	os.makedirs(out_path_results, exist_ok=True)
 
-	out_path_coupled = None
-	if test_opts.couple_outputs:
-		if test_opts.resize_factors is not None:
-			out_path_coupled = os.path.join(test_opts.exp_dir, 'inference_coupled',
-			                                'downsampling_{}'.format(test_opts.resize_factors))
-		else:
-			out_path_coupled = os.path.join(test_opts.exp_dir, 'inference_coupled')
-		os.makedirs(out_path_coupled, exist_ok=True)
+	out_path_results = os.path.join(test_opts.exp_dir, folder_name)
+	
+	ori_save_dir = os.path.join(out_path_results, 'original')
+	gen_save_dir = os.path.join(out_path_results, 'generated')
+	
+	os.makedirs(ori_save_dir, exist_ok=True)
+	os.makedirs(gen_save_dir, exist_ok=True)
 
 	# update test options with options used during training
 	ckpt = torch.load(test_opts.checkpoint_path, map_location='cpu')
@@ -54,8 +46,8 @@ def run():
 	net.cuda()
 
 	print('Loading dataset for {}'.format(opts.dataset_type))
-	dataset_args = data_configs.DATASETS[opts.dataset_type]
-	transforms_dict = dataset_args['transforms'](opts).get_transforms()
+	transforms_dict = data_configs.DATASETS[opts.dataset_type](opts).get_transforms()
+	
 	dataset = InferenceDataset(root=opts.data_path,
 	                           transform=transforms_dict['transform_inference'],
 	                           opts=opts)
@@ -76,37 +68,21 @@ def run():
 			global_time.append(toc - tic)
 
 		for i in range(opts.test_batch_size):
-			result = tensor2im(result_batch[i])
+			ori_img = tensor2im(input_cuda[i]).resize((128,128))
+			gen_img = tensor2im(result_batch[i]).resize((128,128))
+
 			im_path = dataset.paths[global_i]
       
-			"""if opts.couple_outputs or global_i % 100 == 0:
-				input_resized = log_input_image(input_batch[i], opts)
-				if opts.resize_factors is not None:
-					# for super resolution, save the original, down-sampled, and output
-					source = Image.open(im_path)
-					res = np.concatenate([np.array(source.resize((256, 256))),
-					                      np.array(input_resized.resize((256, 256), resample=Image.NEAREST)),
-					                      np.array(result.resize((256, 256)))], axis=1)
-				else:
-					# otherwise, save the original and output
-					res = np.concatenate([np.array(input_resized.resize((256, 256))),
-					                      np.array(result.resize((256, 256)))], axis=1)
+			ori_save_path = os.path.join(ori_save_dir, os.path.basename(im_path))
+			gen_save_path = os.path.join(gen_save_dir, os.path.basename(im_path))
 
-				Image.fromarray(res).save(os.path.join(out_path_coupled, os.path.basename(im_path)))
-      """
-			im_save_path = os.path.join(out_path_results, os.path.basename(im_path))
-      ###Resolution change from 256 to 1024###
-      # Image.fromarray(np.array(result.resize((1024, 1024)))).save(im_save_path)
-			Image.fromarray(np.array(result)).save(im_save_path)
+			Image.fromarray(np.array(ori_img)).save(ori_save_path)
+			Image.fromarray(np.array(gen_img)).save(gen_save_path)
 
 			global_i += 1
 
-	stats_path = os.path.join(opts.exp_dir, 'stats.txt')
 	result_str = 'Runtime {:.4f}+-{:.4f}'.format(np.mean(global_time), np.std(global_time))
 	print(result_str)
-
-	with open(stats_path, 'w') as f:
-		f.write(result_str)
 
 
 def run_on_batch(inputs, net, opts):
