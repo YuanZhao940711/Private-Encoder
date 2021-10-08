@@ -1,5 +1,9 @@
 # Private-Encoder: Enforcing Privacy in Latent Space for Human Face Images
 
+<p align="center">
+<img src="docs/Comparison_Images.png" width="800px"/>
+</p>
+
 ## Description
 Official pytorch impementation of our private-encoder paper for both training and inferencing.
 
