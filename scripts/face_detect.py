@@ -72,4 +72,4 @@ if __name__ == '__main__':
 
     img_num, face_num = detector.detection(images_path=images_path)
     
-    print('\nThe percentage of {} detected faces is {:.2f}'.format(model, face_num/img_num))
+    print('\nThe {}-based detected model finds {:.4f} percent faces \nfrom dataset: {}'.format(args.model, face_num/img_num, args.input_dir))

@@ -68,8 +68,8 @@ def run():
 			global_time.append(toc - tic)
 
 		for i in range(opts.test_batch_size):
-			ori_img = tensor2im(input_cuda[i]).resize((128,128))
-			gen_img = tensor2im(result_batch[i]).resize((128,128))
+			ori_img = tensor2im(input_cuda[i])#.resize((128,128))
+			gen_img = tensor2im(result_batch[i])#.resize((128,128))
 
 			im_path = dataset.paths[global_i]
       
