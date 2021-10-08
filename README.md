@@ -55,6 +55,8 @@ python scripts/train.py \
 --target_id=0.0
 ```
 
+You can also directly run training colab notebook example in [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/11K12U9p0GRtPCI3pkcCgzA5PgJa7SyhV?usp=sharing)
+
 ### Inference
 
 - Pretrained Models
@@ -75,6 +77,8 @@ python scripts/inference.py \
 --test_batch_size=5 \
 --test_workers=4
 ```
+
+You can also directly run inference colab notebook example in [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1waOYFQ3Z-QcgMk4wz1c2041ManPSmVb0?usp=sharing)
 
 ## Citation
 If you use this code for your research, please cite our paper Private-Encoder: Enforcing Privacy in Latent Space for Human Face Images:
